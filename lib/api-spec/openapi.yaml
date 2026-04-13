@@ -3,20 +3,45 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NexusCore Crypto Trading Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and user management
+  - name: profile
+    description: User profile and strategy settings
+  - name: onboarding
+    description: Onboarding wizard
+  - name: dashboard
+    description: Dashboard overview and summary
+  - name: signals
+    description: Trading signals and predictions
+  - name: trades
+    description: Trade history and positions
+  - name: risk
+    description: Risk state and guardian monitoring
+  - name: logs
+    description: Audit trail and system logs
+  - name: market
+    description: Market data (Yahoo Finance partner)
+  - name: education
+    description: Education content (Investopedia partner)
+  - name: partners
+    description: Partner metadata and connectivity
+  - name: exchanges
+    description: Exchange adapter status (BTCC, Bitget)
+  - name: killswitch
+    description: Kill-switch enforcement
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +49,1248 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile and strategy settings
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /onboarding:
+    get:
+      operationId: getOnboardingStatus
+      tags: [onboarding]
+      summary: Get user onboarding status
+      responses:
+        "200":
+          description: Onboarding status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingStatus"
+    post:
+      operationId: submitOnboarding
+      tags: [onboarding]
+      summary: Submit onboarding wizard data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingBody"
+      responses:
+        "200":
+          description: Onboarding complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary with balances, PnL, exposure, kill-switch state
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/routing:
+    get:
+      operationId: getRoutingDecisions
+      tags: [dashboard]
+      summary: Get recent routing decisions
+      responses:
+        "200":
+          description: Routing decisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoutingDecision"
+
+  /dashboard/positions:
+    get:
+      operationId: getPositions
+      tags: [dashboard]
+      summary: Get open positions
+      responses:
+        "200":
+          description: Open positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Position"
+
+  /signals:
+    get:
+      operationId: getSignals
+      tags: [signals]
+      summary: Get trading signals
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, pending, expired, all]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Signals list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Signal"
+
+  /signals/predictions:
+    get:
+      operationId: getPredictions
+      tags: [signals]
+      summary: Get AI predictions and model outputs
+      responses:
+        "200":
+          description: Predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prediction"
+
+  /trades:
+    get:
+      operationId: getTrades
+      tags: [trades]
+      summary: Get trade history
+      parameters:
+        - name: exchange
+          in: query
+          schema:
+            type: string
+            enum: [btcc, bitget, all]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, cancelled, all]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Trades list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trade"
+
+  /trades/summary:
+    get:
+      operationId: getTradesSummary
+      tags: [trades]
+      summary: Get trades performance summary
+      responses:
+        "200":
+          description: Trades summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradesSummary"
+
+  /risk/state:
+    get:
+      operationId: getRiskState
+      tags: [risk]
+      summary: Get current risk state
+      responses:
+        "200":
+          description: Risk state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskState"
+
+  /risk/settings:
+    get:
+      operationId: getRiskSettings
+      tags: [risk]
+      summary: Get risk settings
+      responses:
+        "200":
+          description: Risk settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskSettings"
+    put:
+      operationId: updateRiskSettings
+      tags: [risk]
+      summary: Update risk settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RiskSettingsBody"
+      responses:
+        "200":
+          description: Updated risk settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskSettings"
+
+  /killswitch:
+    get:
+      operationId: getKillSwitchStatus
+      tags: [killswitch]
+      summary: Get kill-switch status
+      responses:
+        "200":
+          description: Kill-switch status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KillSwitchStatus"
+    post:
+      operationId: triggerKillSwitch
+      tags: [killswitch]
+      summary: Trigger kill-switch (halt all trading)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KillSwitchBody"
+      responses:
+        "200":
+          description: Kill-switch triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KillSwitchStatus"
+
+  /logs:
+    get:
+      operationId: getLogs
+      tags: [logs]
+      summary: Get audit trail and system logs
+      parameters:
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [info, warn, error, all]
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [trade, risk, system, auth, all]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Logs list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  /logs/reconciliation:
+    get:
+      operationId: getReconciliationReport
+      tags: [logs]
+      summary: Get reconciliation report
+      responses:
+        "200":
+          description: Reconciliation report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationReport"
+
+  /market/overview:
+    get:
+      operationId: getMarketOverview
+      tags: [market]
+      summary: Get market overview (Yahoo Finance partner data)
+      responses:
+        "200":
+          description: Market overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketOverview"
+
+  /market/prices:
+    get:
+      operationId: getMarketPrices
+      tags: [market]
+      summary: Get current prices for tracked assets
+      parameters:
+        - name: symbols
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Price data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PriceData"
+
+  /market/news:
+    get:
+      operationId: getMarketNews
+      tags: [market]
+      summary: Get market news (Yahoo Finance partner)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Market news
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NewsItem"
+
+  /education/topics:
+    get:
+      operationId: getEducationTopics
+      tags: [education]
+      summary: Get education topics (Investopedia partner)
+      responses:
+        "200":
+          description: Education topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EducationTopic"
+
+  /education/definitions:
+    get:
+      operationId: getDefinitions
+      tags: [education]
+      summary: Get term definitions
+      parameters:
+        - name: term
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Definition"
+
+  /partners:
+    get:
+      operationId: getPartners
+      tags: [partners]
+      summary: Get partner metadata and connectivity status
+      responses:
+        "200":
+          description: Partners list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Partner"
+
+  /exchanges:
+    get:
+      operationId: getExchanges
+      tags: [exchanges]
+      summary: Get exchange adapter status (BTCC, Bitget)
+      responses:
+        "200":
+          description: Exchanges status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExchangeStatus"
+
+  /exchanges/{exchange}/account:
+    get:
+      operationId: getExchangeAccount
+      tags: [exchanges]
+      summary: Get exchange account data
+      parameters:
+        - name: exchange
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [btcc, bitget]
+      responses:
+        "200":
+          description: Account data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeAccount"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
+        version:
+          type: string
+        uptime:
+          type: number
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    RegisterBody:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, email, name, role, createdAt]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, trader, viewer]
+        onboardingComplete:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required: [userId, riskMode, maxExposure, maxDailyLoss, autoTrade]
+      properties:
+        userId:
+          type: integer
+        riskMode:
+          type: string
+          enum: [conservative, moderate, aggressive]
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        preferredExchange:
+          type: string
+          enum: [btcc, bitget, auto]
+        apiKeysBtcc:
+          type: boolean
+        apiKeysBitget:
+          type: boolean
+        forexAccountId:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        riskMode:
+          type: string
+          enum: [conservative, moderate, aggressive]
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        preferredExchange:
+          type: string
+          enum: [btcc, bitget, auto]
+        forexAccountId:
+          type: string
+
+    OnboardingStatus:
+      type: object
+      required: [complete, step]
+      properties:
+        complete:
+          type: boolean
+        step:
+          type: integer
+        riskMode:
+          type: string
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        exchangeConnected:
+          type: boolean
+
+    OnboardingBody:
+      type: object
+      required: [step]
+      properties:
+        step:
+          type: integer
+        riskMode:
+          type: string
+          enum: [conservative, moderate, aggressive]
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        exchange:
+          type: string
+          enum: [btcc, bitget, both]
+        exchangeApiKey:
+          type: string
+        exchangeApiSecret:
+          type: string
+        forexAccountId:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [totalBalance, dailyPnl, exposure, killSwitchActive, activePositions, openOrders, guardianStatus, lastUpdated]
+      properties:
+        totalBalance:
+          type: number
+        totalBalanceUsd:
+          type: number
+        dailyPnl:
+          type: number
+        dailyPnlPct:
+          type: number
+        exposure:
+          type: number
+        exposurePct:
+          type: number
+        killSwitchActive:
+          type: boolean
+        activePositions:
+          type: integer
+        openOrders:
+          type: integer
+        guardianStatus:
+          type: string
+          enum: [healthy, warning, critical]
+        riskMode:
+          type: string
+        autoTradeEnabled:
+          type: boolean
+        lastUpdated:
+          type: string
+          format: date-time
+        exchanges:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              balance:
+                type: number
+              status:
+                type: string
+
+    RoutingDecision:
+      type: object
+      required: [id, timestamp, symbol, exchange, reason, decision]
+      properties:
+        id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        symbol:
+          type: string
+        exchange:
+          type: string
+        decision:
+          type: string
+          enum: [execute, reject, defer]
+        reason:
+          type: string
+        confidence:
+          type: number
+        riskScore:
+          type: number
+
+    Position:
+      type: object
+      required: [id, symbol, exchange, side, size, entryPrice, currentPrice, unrealizedPnl, openedAt]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        exchange:
+          type: string
+          enum: [btcc, bitget]
+        side:
+          type: string
+          enum: [long, short]
+        size:
+          type: number
+        entryPrice:
+          type: number
+        currentPrice:
+          type: number
+        unrealizedPnl:
+          type: number
+        unrealizedPnlPct:
+          type: number
+        openedAt:
+          type: string
+          format: date-time
+
+    Signal:
+      type: object
+      required: [id, symbol, direction, strength, status, source, createdAt]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        direction:
+          type: string
+          enum: [long, short, neutral]
+        strength:
+          type: number
+        status:
+          type: string
+          enum: [active, pending, expired, executed, rejected]
+        source:
+          type: string
+        confidence:
+          type: number
+        targetPrice:
+          type: number
+        stopLoss:
+          type: number
+        takeProfit:
+          type: number
+        explanation:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    Prediction:
+      type: object
+      required: [id, symbol, model, direction, confidence, horizon, createdAt]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        model:
+          type: string
+        direction:
+          type: string
+          enum: [up, down, sideways]
+        confidence:
+          type: number
+        horizon:
+          type: string
+        predictedChange:
+          type: number
+        explanation:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Trade:
+      type: object
+      required: [id, symbol, exchange, side, size, price, status, createdAt]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        exchange:
+          type: string
+          enum: [btcc, bitget]
+        side:
+          type: string
+          enum: [buy, sell]
+        size:
+          type: number
+        price:
+          type: number
+        filledPrice:
+          type: number
+        fee:
+          type: number
+        pnl:
+          type: number
+        status:
+          type: string
+          enum: [open, filled, partial, cancelled, rejected]
+        orderId:
+          type: string
+        signalId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TradesSummary:
+      type: object
+      required: [totalTrades, winRate, totalPnl, avgTradeSize, bestTrade, worstTrade]
+      properties:
+        totalTrades:
+          type: integer
+        winningTrades:
+          type: integer
+        losingTrades:
+          type: integer
+        winRate:
+          type: number
+        totalPnl:
+          type: number
+        avgTradeSize:
+          type: number
+        bestTrade:
+          type: number
+        worstTrade:
+          type: number
+        byExchange:
+          type: array
+          items:
+            type: object
+            properties:
+              exchange:
+                type: string
+              trades:
+                type: integer
+              pnl:
+                type: number
+
+    RiskState:
+      type: object
+      required: [guardianStatus, currentExposure, dailyLoss, killSwitchActive, lastChecked]
+      properties:
+        guardianStatus:
+          type: string
+          enum: [healthy, warning, critical]
+        currentExposure:
+          type: number
+        exposureLimit:
+          type: number
+        dailyLoss:
+          type: number
+        dailyLossLimit:
+          type: number
+        killSwitchActive:
+          type: boolean
+        breaches:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        lastChecked:
+          type: string
+          format: date-time
+
+    RiskSettings:
+      type: object
+      required: [riskMode, maxExposure, maxDailyLoss, autoTrade]
+      properties:
+        riskMode:
+          type: string
+          enum: [conservative, moderate, aggressive]
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        maxPositions:
+          type: integer
+        maxOrderSize:
+          type: number
+        guardianEnabled:
+          type: boolean
+
+    RiskSettingsBody:
+      type: object
+      properties:
+        riskMode:
+          type: string
+          enum: [conservative, moderate, aggressive]
+        maxExposure:
+          type: number
+        maxDailyLoss:
+          type: number
+        autoTrade:
+          type: boolean
+        maxPositions:
+          type: integer
+        maxOrderSize:
+          type: number
+
+    KillSwitchStatus:
+      type: object
+      required: [active, reason, triggeredAt, triggeredBy]
+      properties:
+        active:
+          type: boolean
+        reason:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+        triggeredBy:
+          type: string
+        canReset:
+          type: boolean
+
+    KillSwitchBody:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [trigger, reset]
+        reason:
+          type: string
+
+    AuditLog:
+      type: object
+      required: [id, level, category, message, timestamp]
+      properties:
+        id:
+          type: integer
+        level:
+          type: string
+          enum: [info, warn, error]
+        category:
+          type: string
+          enum: [trade, risk, system, auth]
+        message:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        userId:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    ReconciliationReport:
+      type: object
+      required: [status, checkedAt, exchanges]
+      properties:
+        status:
+          type: string
+          enum: [clean, discrepancies, error]
+        checkedAt:
+          type: string
+          format: date-time
+        exchanges:
+          type: array
+          items:
+            type: object
+            properties:
+              exchange:
+                type: string
+              localTrades:
+                type: integer
+              exchangeTrades:
+                type: integer
+              discrepancies:
+                type: integer
+              lastSynced:
+                type: string
+                format: date-time
+
+    MarketOverview:
+      type: object
+      required: [assets, updatedAt]
+      properties:
+        assets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceData"
+        btcDominance:
+          type: number
+        totalMarketCap:
+          type: number
+        fearGreedIndex:
+          type: integer
+        fearGreedLabel:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    PriceData:
+      type: object
+      required: [symbol, price, change24h, changePct24h]
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        change24h:
+          type: number
+        changePct24h:
+          type: number
+        volume24h:
+          type: number
+        marketCap:
+          type: number
+        high24h:
+          type: number
+        low24h:
+          type: number
+        source:
+          type: string
+
+    NewsItem:
+      type: object
+      required: [id, title, summary, url, publishedAt, source]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        url:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        sentiment:
+          type: string
+          enum: [positive, negative, neutral]
+        relatedAssets:
+          type: array
+          items:
+            type: string
+
+    EducationTopic:
+      type: object
+      required: [id, title, category, summary, url]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        summary:
+          type: string
+        url:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        source:
+          type: string
+
+    Definition:
+      type: object
+      required: [term, definition, source]
+      properties:
+        term:
+          type: string
+        definition:
+          type: string
+        example:
+          type: string
+        relatedTerms:
+          type: array
+          items:
+            type: string
+        url:
+          type: string
+        source:
+          type: string
+
+    Partner:
+      type: object
+      required: [id, name, role, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [broker_execution, market_data, education]
+        status:
+          type: string
+          enum: [connected, disconnected, limited]
+        description:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        lastChecked:
+          type: string
+          format: date-time
+
+    ExchangeStatus:
+      type: object
+      required: [exchange, status, latency]
+      properties:
+        exchange:
+          type: string
+          enum: [btcc, bitget]
+        status:
+          type: string
+          enum: [connected, disconnected, degraded, rate_limited]
+        latency:
+          type: number
+        lastHeartbeat:
+          type: string
+          format: date-time
+        ordersToday:
+          type: integer
+        fillRate:
+          type: number
+
+    ExchangeAccount:
+      type: object
+      required: [exchange, balances, updatedAt]
+      properties:
+        exchange:
+          type: string
+        balances:
+          type: array
+          items:
+            type: object
+            properties:
+              asset:
+                type: string
+              free:
+                type: number
+              locked:
+                type: number
+              totalUsd:
+                type: number
+        totalUsd:
+          type: number
+        updatedAt:
+          type: string
+          format: date-time
